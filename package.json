@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.11.4",
+    "@react-rxjs/core": "0.8.0",
+    "@react-rxjs/utils": "^0.8.2",
+    "@testing-library/jest-dom": "^5.12.0",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
-    "@types/jest": "^26.0.15",
+    "@types/jest": "^26.0.23",
     "@types/node": "^12.0.0",
-    "@types/react": "^17.0.0",
+    "@types/react": "^17.0.5",
     "@types/react-dom": "^17.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
-    "typescript": "^4.1.2",
+    "rxjs": "^7.0.0-beta.15",
+    "typescript": "^4.2.4",
     "web-vitals": "^1.0.1"
   },
   "scripts": {
@@ -28,6 +31,10 @@
       "react-app/jest"
     ]
   },
+  "prettier": {
+    "trailingComma": "all",
+    "semi": false
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -39,5 +46,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "prettier": "^2.2.1"
   }
 }
