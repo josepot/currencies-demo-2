@@ -15,6 +15,8 @@ import {
   initialOrders,
   Table,
   getBaseCurrencyPrice,
+  getRandomOrder,
+  uuidv4,
 } from "./utils"
 
 type SetState<T> = React.Dispatch<React.SetStateAction<T>>
@@ -196,6 +198,19 @@ const Orders = () => {
   )
 }
 
+const AddOrderButton = () => {
+  const [, dispatch] = useOrders()
+  return (
+    <button
+      onClick={() => {
+        dispatch({ type: "Add", payload: getRandomOrder(uuidv4()) })
+      }}
+    >
+      Add
+    </button>
+  )
+}
+
 const OrderTotal = () => {
   const total = 10000
   return <div className="total">{formatPrice(total)}£</div>
@@ -208,7 +223,7 @@ const App = () => (
         <h1>Orders</h1>
         <Orders />
         <div className="actions">
-          <button onClick={() => {}}>Add</button>
+          <AddOrderButton />
           <OrderTotal />
         </div>
         <h1>Exchange rates</h1>
