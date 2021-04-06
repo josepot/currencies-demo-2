@@ -1,3 +1,5 @@
+import { bind } from "@react-rxjs/core"
+import { EMPTY } from "rxjs"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -7,6 +9,8 @@ import {
   initialOrders,
   Table,
 } from "./utils"
+
+const [useCurrencies] = bind(EMPTY, Object.keys(initialCurrencyRates))
 
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
   const rate = initialCurrencyRates[currency]
@@ -21,7 +25,7 @@ const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
 }
 
 const Currencies = () => {
-  const currencies = Object.keys(initialCurrencyRates)
+  const currencies = useCurrencies()
   return (
     <Table columns={["Currency", "Exchange rate"]}>
       {currencies.map((currency) => (
@@ -35,7 +39,7 @@ const CurrencySelector: React.FC<{
   value: string
   onChange: (next: string) => void
 }> = ({ value, onChange }) => {
-  const currencies = Object.keys(initialCurrencyRates)
+  const currencies = useCurrencies()
   return (
     <select
       onChange={(e) => {
