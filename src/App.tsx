@@ -212,7 +212,13 @@ const AddOrderButton = () => {
 }
 
 const OrderTotal = () => {
-  const total = 10000
+  const [orders] = useOrders()
+  const [currencyRates] = useCurrencyRates()
+  const total = Object.values(orders)
+    .map((order) =>
+      getBaseCurrencyPrice(order.price, currencyRates[order.currency]),
+    )
+    .reduce((a, b) => a + b, 0)
   return <div className="total">{formatPrice(total)}£</div>
 }
 
