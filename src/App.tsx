@@ -7,6 +7,7 @@ import {
   formatPrice,
   initialOrders,
   Table,
+  getBaseCurrencyPrice,
 } from "./utils"
 
 type SetState<T> = React.Dispatch<React.SetStateAction<T>>
@@ -93,6 +94,8 @@ const CurrencySelector: React.FC<{
 const Orderline: React.FC<Order> = (order) => {
   const [price, setPrice] = useState(order.price)
   const [currency, setCurrency] = useState(order.currency)
+  const [currencyRates] = useCurrencyRates()
+  const baseCurrencyPrice = getBaseCurrencyPrice(price, currencyRates[currency])
   return (
     <tr>
       <td>{order.title}</td>
@@ -102,7 +105,7 @@ const Orderline: React.FC<Order> = (order) => {
       <td>
         <CurrencySelector value={currency} onChange={setCurrency} />
       </td>
-      <td>{formatPrice(1000)}£</td>
+      <td>{formatPrice(baseCurrencyPrice)}£</td>
     </tr>
   )
 }
