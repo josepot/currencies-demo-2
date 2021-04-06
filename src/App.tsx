@@ -1,7 +1,8 @@
 import { bind, Subscribe } from "@react-rxjs/core"
-import { createKeyedSignal } from "@react-rxjs/utils"
+import { createKeyedSignal, createSignal } from "@react-rxjs/utils"
+import { memo } from "react"
 import { combineLatest, concat, EMPTY } from "rxjs"
-import { map, switchMap } from "rxjs/operators"
+import { map, scan, switchMap } from "rxjs/operators"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -10,6 +11,8 @@ import {
   initialOrders,
   Table,
   getBaseCurrencyPrice,
+  uuidv4,
+  getRandomOrder,
 } from "./utils"
 
 const [useCurrencies] = bind(EMPTY, Object.keys(initialCurrencyRates))
@@ -21,13 +24,20 @@ const [useCurrencyRate, currencyRate$] = bind(
 )
 
 const initialOrderIds = Object.keys(initialOrders)
-const [useOrderIds] = bind(EMPTY, initialOrderIds)
+const [addOrder$, onAddOrder] = createSignal()
+const [useOrderIds] = bind(
+  addOrder$.pipe(
+    map(uuidv4),
+    scan((acc, id) => [...acc, id], initialOrderIds),
+  ),
+  initialOrderIds,
+)
 
 const [priceChange$, onPriceChange] = createKeyedSignal<string, number>()
 const [currencyChange$, onCurrencyChange] = createKeyedSignal<string, string>()
 
 const [useOrder] = bind((id: string) => {
-  const initialOrder = initialOrders[id]
+  const initialOrder = initialOrders[id] || getRandomOrder(id)
   const price$ = concat([initialOrder.price], priceChange$(id))
   const currency$ = concat([initialOrder.currency], currencyChange$(id))
 
@@ -92,7 +102,7 @@ const CurrencySelector: React.FC<{
   )
 }
 
-const Orderline: React.FC<{ id: string }> = ({ id }) => {
+const Orderline: React.FC<{ id: string }> = memo(({ id }) => {
   const order = useOrder(id)
   return (
     <tr>
@@ -116,7 +126,7 @@ const Orderline: React.FC<{ id: string }> = ({ id }) => {
       <td>{formatPrice(order.baseCurrencyPrice)}£</td>
     </tr>
   )
-}
+})
 
 const Orders = () => {
   const orderIds = useOrderIds()
@@ -140,7 +150,7 @@ const App = () => (
       <h1>Orders</h1>
       <Orders />
       <div className="actions">
-        <button onClick={() => {}}>Add</button>
+        <button onClick={onAddOrder}>Add</button>
         <OrderTotal />
       </div>
       <h1>Exchange rates</h1>
