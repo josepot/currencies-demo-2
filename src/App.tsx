@@ -1,10 +1,10 @@
-import { bind } from "@react-rxjs/core"
+import { bind, Subscribe } from "@react-rxjs/core"
 import { createKeyedSignal } from "@react-rxjs/utils"
-import { EMPTY } from "rxjs"
+import { combineLatest, concat, EMPTY } from "rxjs"
+import { map } from "rxjs/operators"
 import {
   initialCurrencyRates,
   formatCurrency,
-  Order,
   NumberInput,
   formatPrice,
   initialOrders,
@@ -18,6 +18,22 @@ const [useCurrencyRate] = bind(
   rateChange$,
   (currency) => initialCurrencyRates[currency],
 )
+
+const initialOrderIds = Object.keys(initialOrders)
+const [useOrderIds] = bind(EMPTY, initialOrderIds)
+
+const [priceChange$, onPriceChange] = createKeyedSignal<string, number>()
+const [currencyChange$, onCurrencyChange] = createKeyedSignal<string, string>()
+
+const [useOrder] = bind((id: string) => {
+  const initialOrder = initialOrders[id]
+  const price$ = concat([initialOrder.price], priceChange$(id))
+  const currency$ = concat([initialOrder.currency], currencyChange$(id))
+
+  return combineLatest({ price: price$, currency: currency$ }).pipe(
+    map((update) => ({ ...initialOrder, ...update })),
+  )
+})
 
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
   const rate = useCurrencyRate(currency)
@@ -68,15 +84,26 @@ const CurrencySelector: React.FC<{
   )
 }
 
-const Orderline: React.FC<Order> = (order) => {
+const Orderline: React.FC<{ id: string }> = ({ id }) => {
+  const order = useOrder(id)
   return (
     <tr>
       <td>{order.title}</td>
       <td>
-        <NumberInput value={order.price} onChange={() => {}} />
+        <NumberInput
+          value={order.price}
+          onChange={(value) => {
+            onPriceChange(id, value)
+          }}
+        />
       </td>
       <td>
-        <CurrencySelector value={order.currency} onChange={() => {}} />
+        <CurrencySelector
+          value={order.currency}
+          onChange={(value) => {
+            onCurrencyChange(id, value)
+          }}
+        />
       </td>
       <td>{formatPrice(1000)}£</td>
     </tr>
@@ -84,11 +111,11 @@ const Orderline: React.FC<Order> = (order) => {
 }
 
 const Orders = () => {
-  const orders = Object.values(initialOrders)
+  const orderIds = useOrderIds()
   return (
     <Table columns={["Article", "Price", "Currency", "Price in £"]}>
-      {orders.map((order) => (
-        <Orderline key={order.id} {...order} />
+      {orderIds.map((id) => (
+        <Orderline key={id} id={id} />
       ))}
     </Table>
   )
@@ -100,16 +127,18 @@ const OrderTotal = () => {
 }
 
 const App = () => (
-  <div className="App">
-    <h1>Orders</h1>
-    <Orders />
-    <div className="actions">
-      <button onClick={() => {}}>Add</button>
-      <OrderTotal />
+  <Subscribe>
+    <div className="App">
+      <h1>Orders</h1>
+      <Orders />
+      <div className="actions">
+        <button onClick={() => {}}>Add</button>
+        <OrderTotal />
+      </div>
+      <h1>Exchange rates</h1>
+      <Currencies />
     </div>
-    <h1>Exchange rates</h1>
-    <Currencies />
-  </div>
+  </Subscribe>
 )
 
 export default App
