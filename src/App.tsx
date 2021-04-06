@@ -1,7 +1,7 @@
 import { bind, Subscribe } from "@react-rxjs/core"
 import { createKeyedSignal } from "@react-rxjs/utils"
 import { combineLatest, concat, EMPTY } from "rxjs"
-import { map } from "rxjs/operators"
+import { map, switchMap } from "rxjs/operators"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -9,12 +9,13 @@ import {
   formatPrice,
   initialOrders,
   Table,
+  getBaseCurrencyPrice,
 } from "./utils"
 
 const [useCurrencies] = bind(EMPTY, Object.keys(initialCurrencyRates))
 
 const [rateChange$, onRateChange] = createKeyedSignal<string, number>()
-const [useCurrencyRate] = bind(
+const [useCurrencyRate, currencyRate$] = bind(
   rateChange$,
   (currency) => initialCurrencyRates[currency],
 )
@@ -30,9 +31,16 @@ const [useOrder] = bind((id: string) => {
   const price$ = concat([initialOrder.price], priceChange$(id))
   const currency$ = concat([initialOrder.currency], currencyChange$(id))
 
-  return combineLatest({ price: price$, currency: currency$ }).pipe(
-    map((update) => ({ ...initialOrder, ...update })),
+  const rate$ = currency$.pipe(switchMap((ccy) => currencyRate$(ccy)))
+  const baseCurrencyPrice$ = combineLatest([price$, rate$]).pipe(
+    map(([price, rate]) => getBaseCurrencyPrice(price, rate)),
   )
+
+  return combineLatest({
+    price: price$,
+    currency: currency$,
+    baseCurrencyPrice: baseCurrencyPrice$,
+  }).pipe(map((update) => ({ ...initialOrder, ...update })))
 })
 
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
@@ -105,7 +113,7 @@ const Orderline: React.FC<{ id: string }> = ({ id }) => {
           }}
         />
       </td>
-      <td>{formatPrice(1000)}£</td>
+      <td>{formatPrice(order.baseCurrencyPrice)}£</td>
     </tr>
   )
 }
