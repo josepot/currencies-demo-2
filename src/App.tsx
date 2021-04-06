@@ -1,8 +1,8 @@
 import { bind, Subscribe } from "@react-rxjs/core"
-import { createKeyedSignal, createSignal } from "@react-rxjs/utils"
+import { createKeyedSignal, createSignal, combineKeys } from "@react-rxjs/utils"
 import { memo } from "react"
-import { combineLatest, concat, EMPTY } from "rxjs"
-import { map, scan, switchMap } from "rxjs/operators"
+import { combineLatest, concat, EMPTY, pipe } from "rxjs"
+import { map, pluck, scan, switchMap } from "rxjs/operators"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -25,7 +25,7 @@ const [useCurrencyRate, currencyRate$] = bind(
 
 const initialOrderIds = Object.keys(initialOrders)
 const [addOrder$, onAddOrder] = createSignal()
-const [useOrderIds] = bind(
+const [useOrderIds, orderIds$] = bind(
   addOrder$.pipe(
     map(uuidv4),
     scan((acc, id) => [...acc, id], initialOrderIds),
@@ -36,7 +36,7 @@ const [useOrderIds] = bind(
 const [priceChange$, onPriceChange] = createKeyedSignal<string, number>()
 const [currencyChange$, onCurrencyChange] = createKeyedSignal<string, string>()
 
-const [useOrder] = bind((id: string) => {
+const [useOrder, order$] = bind((id: string) => {
   const initialOrder = initialOrders[id] || getRandomOrder(id)
   const price$ = concat([initialOrder.price], priceChange$(id))
   const currency$ = concat([initialOrder.currency], currencyChange$(id))
@@ -52,6 +52,12 @@ const [useOrder] = bind((id: string) => {
     baseCurrencyPrice: baseCurrencyPrice$,
   }).pipe(map((update) => ({ ...initialOrder, ...update })))
 })
+
+const [useTotal] = bind(
+  combineKeys(orderIds$, pipe(order$, pluck("baseCurrencyPrice"))).pipe(
+    map((prices) => Array.from(prices.values()).reduce((a, b) => a + b, 0)),
+  ),
+)
 
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
   const rate = useCurrencyRate(currency)
@@ -140,7 +146,7 @@ const Orders = () => {
 }
 
 const OrderTotal = () => {
-  const total = 10000
+  const total = useTotal()
   return <div className="total">{formatPrice(total)}£</div>
 }
 
