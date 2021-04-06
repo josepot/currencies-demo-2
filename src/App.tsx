@@ -1,4 +1,5 @@
 import { bind } from "@react-rxjs/core"
+import { createKeyedSignal } from "@react-rxjs/utils"
 import { EMPTY } from "rxjs"
 import {
   initialCurrencyRates,
@@ -12,13 +13,24 @@ import {
 
 const [useCurrencies] = bind(EMPTY, Object.keys(initialCurrencyRates))
 
+const [rateChange$, onRateChange] = createKeyedSignal<string, number>()
+const [useCurrencyRate] = bind(
+  rateChange$,
+  (currency) => initialCurrencyRates[currency],
+)
+
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
-  const rate = initialCurrencyRates[currency]
+  const rate = useCurrencyRate(currency)
   return (
     <tr key={currency}>
       <td>{formatCurrency(currency)}</td>
       <td>
-        <NumberInput value={rate} onChange={() => {}} />
+        <NumberInput
+          value={rate}
+          onChange={(value) => {
+            onRateChange(currency, value)
+          }}
+        />
       </td>
     </tr>
   )
