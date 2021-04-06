@@ -9,26 +9,43 @@ import {
   Table,
 } from "./utils"
 
+type SetState<T> = React.Dispatch<React.SetStateAction<T>>
+
 const initialCurrencies = Object.keys(initialCurrencyRates)
 const currenciesContext = createContext(initialCurrencies)
 const useCurrencies = () => useContext(currenciesContext)
 const { Provider: CurrenciesContextProvider } = currenciesContext
 
+const currencyRatesContext = createContext<
+  [Record<string, number>, SetState<Record<string, number>>]
+>([initialCurrencyRates, () => {}])
+const useCurrencyRates = () => useContext(currencyRatesContext)
+const { Provider: CurrencyRatesContextProvider } = currencyRatesContext
+
 const CurrenciesProvider: React.FC = ({ children }) => {
+  const currencyRates = useState(initialCurrencyRates)
   return (
     <CurrenciesContextProvider value={initialCurrencies}>
-      {children}
+      <CurrencyRatesContextProvider value={currencyRates}>
+        {children}
+      </CurrencyRatesContextProvider>
     </CurrenciesContextProvider>
   )
 }
 
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
-  const [rate, setRate] = useState(initialCurrencyRates[currency])
+  const [currencyRates, setCurrencyRates] = useCurrencyRates()
+  const rate = currencyRates[currency]
   return (
     <tr key={currency}>
       <td>{formatCurrency(currency)}</td>
       <td>
-        <NumberInput value={rate} onChange={setRate} />
+        <NumberInput
+          value={rate}
+          onChange={(value) => {
+            setCurrencyRates((prev) => ({ ...prev, [currency]: value }))
+          }}
+        />
       </td>
     </tr>
   )
