@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react"
+import { createContext, useContext, useState } from "react"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -23,12 +23,12 @@ const CurrenciesProvider: React.FC = ({ children }) => {
 }
 
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
-  const rate = initialCurrencyRates[currency]
+  const [rate, setRate] = useState(initialCurrencyRates[currency])
   return (
     <tr key={currency}>
       <td>{formatCurrency(currency)}</td>
       <td>
-        <NumberInput value={rate} onChange={() => {}} />
+        <NumberInput value={rate} onChange={setRate} />
       </td>
     </tr>
   )
