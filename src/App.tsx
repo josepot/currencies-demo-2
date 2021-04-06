@@ -1,4 +1,11 @@
-import { createContext, memo, useContext, useState } from "react"
+import {
+  createContext,
+  Dispatch,
+  memo,
+  useContext,
+  useReducer,
+  useState,
+} from "react"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -31,6 +38,57 @@ const CurrenciesProvider: React.FC = ({ children }) => {
         {children}
       </CurrencyRatesContextProvider>
     </CurrenciesContextProvider>
+  )
+}
+
+interface AddOrder {
+  type: "Add"
+  payload: Order
+}
+interface EditCurrency {
+  type: "EditCurrency"
+  payload: { id: string; value: string }
+}
+interface EditPrice {
+  type: "EditPrice"
+  payload: { id: string; value: number }
+}
+type OrdersAction = AddOrder | EditCurrency | EditPrice
+function ordersReducer(prev: Record<string, Order>, action: OrdersAction) {
+  switch (action.type) {
+    case "Add":
+      return { ...prev, [action.payload.id]: action.payload }
+    case "EditPrice":
+      return {
+        ...prev,
+        [action.payload.id]: {
+          ...prev[action.payload.id],
+          price: action.payload.value,
+        },
+      }
+    case "EditCurrency":
+      return {
+        ...prev,
+        [action.payload.id]: {
+          ...prev[action.payload.id],
+          currency: action.payload.value,
+        },
+      }
+    default:
+      return prev
+  }
+}
+
+const ordersContext = createContext<
+  [Record<string, Order>, React.Dispatch<OrdersAction>]
+>([initialOrders, () => {}])
+const useOrders = () => useContext(ordersContext)
+const { Provider: OrdersContextProvider } = ordersContext
+
+const OrdersProvider: React.FC = ({ children }) => {
+  const orders = useReducer(ordersReducer, initialOrders)
+  return (
+    <OrdersContextProvider value={orders}>{children}</OrdersContextProvider>
   )
 }
 
@@ -91,31 +149,48 @@ const CurrencySelector: React.FC<{
   )
 }
 
-const Orderline: React.FC<Order> = (order) => {
-  const [price, setPrice] = useState(order.price)
-  const [currency, setCurrency] = useState(order.currency)
-  const [currencyRates] = useCurrencyRates()
-  const baseCurrencyPrice = getBaseCurrencyPrice(price, currencyRates[currency])
+const Orderline: React.FC<{
+  order: Order
+  currencyRate: number
+  dispatch: Dispatch<OrdersAction>
+}> = memo(({ order, currencyRate, dispatch }) => {
+  const baseCurrencyPrice = getBaseCurrencyPrice(order.price, currencyRate)
   return (
     <tr>
       <td>{order.title}</td>
       <td>
-        <NumberInput value={price} onChange={setPrice} />
+        <NumberInput
+          value={order.price}
+          onChange={(value) => {
+            dispatch({ type: "EditPrice", payload: { id: order.id, value } })
+          }}
+        />
       </td>
       <td>
-        <CurrencySelector value={currency} onChange={setCurrency} />
+        <CurrencySelector
+          value={order.currency}
+          onChange={(value) => {
+            dispatch({ type: "EditCurrency", payload: { id: order.id, value } })
+          }}
+        />
       </td>
       <td>{formatPrice(baseCurrencyPrice)}£</td>
     </tr>
   )
-}
+})
 
 const Orders = () => {
-  const orders = Object.values(initialOrders)
+  const [orders, dispatch] = useOrders()
+  const [currencyRates] = useCurrencyRates()
   return (
     <Table columns={["Article", "Price", "Currency", "Price in £"]}>
-      {orders.map((order) => (
-        <Orderline key={order.id} {...order} />
+      {Object.entries(orders).map(([id, order]) => (
+        <Orderline
+          key={id}
+          order={order}
+          dispatch={dispatch}
+          currencyRate={currencyRates[order.currency]}
+        />
       ))}
     </Table>
   )
@@ -128,16 +203,18 @@ const OrderTotal = () => {
 
 const App = () => (
   <CurrenciesProvider>
-    <div className="App">
-      <h1>Orders</h1>
-      <Orders />
-      <div className="actions">
-        <button onClick={() => {}}>Add</button>
-        <OrderTotal />
+    <OrdersProvider>
+      <div className="App">
+        <h1>Orders</h1>
+        <Orders />
+        <div className="actions">
+          <button onClick={() => {}}>Add</button>
+          <OrderTotal />
+        </div>
+        <h1>Exchange rates</h1>
+        <Currencies />
       </div>
-      <h1>Exchange rates</h1>
-      <Currencies />
-    </div>
+    </OrdersProvider>
   </CurrenciesProvider>
 )
 
