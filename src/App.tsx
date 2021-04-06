@@ -1,3 +1,4 @@
+import { createContext, useContext } from "react"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -7,6 +8,19 @@ import {
   initialOrders,
   Table,
 } from "./utils"
+
+const initialCurrencies = Object.keys(initialCurrencyRates)
+const currenciesContext = createContext(initialCurrencies)
+const useCurrencies = () => useContext(currenciesContext)
+const { Provider: CurrenciesContextProvider } = currenciesContext
+
+const CurrenciesProvider: React.FC = ({ children }) => {
+  return (
+    <CurrenciesContextProvider value={initialCurrencies}>
+      {children}
+    </CurrenciesContextProvider>
+  )
+}
 
 const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
   const rate = initialCurrencyRates[currency]
@@ -21,7 +35,7 @@ const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
 }
 
 const Currencies = () => {
-  const currencies = Object.keys(initialCurrencyRates)
+  const currencies = useCurrencies()
   return (
     <Table columns={["Currency", "Exchange rate"]}>
       {currencies.map((currency) => (
@@ -35,7 +49,7 @@ const CurrencySelector: React.FC<{
   value: string
   onChange: (next: string) => void
 }> = ({ value, onChange }) => {
-  const currencies = Object.keys(initialCurrencyRates)
+  const currencies = useCurrencies()
   return (
     <select
       onChange={(e) => {
@@ -84,16 +98,18 @@ const OrderTotal = () => {
 }
 
 const App = () => (
-  <div className="App">
-    <h1>Orders</h1>
-    <Orders />
-    <div className="actions">
-      <button onClick={() => {}}>Add</button>
-      <OrderTotal />
+  <CurrenciesProvider>
+    <div className="App">
+      <h1>Orders</h1>
+      <Orders />
+      <div className="actions">
+        <button onClick={() => {}}>Add</button>
+        <OrderTotal />
+      </div>
+      <h1>Exchange rates</h1>
+      <Currencies />
     </div>
-    <h1>Exchange rates</h1>
-    <Currencies />
-  </div>
+  </CurrenciesProvider>
 )
 
 export default App
