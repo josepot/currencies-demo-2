@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react"
+import { createContext, memo, useContext, useState } from "react"
 import {
   initialCurrencyRates,
   formatCurrency,
@@ -33,7 +33,7 @@ const CurrenciesProvider: React.FC = ({ children }) => {
   )
 }
 
-const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
+const CurrencyRate: React.FC<{ currency: string }> = memo(({ currency }) => {
   const [currencyRates, setCurrencyRates] = useCurrencyRates()
   const rate = currencyRates[currency]
   return (
@@ -49,7 +49,7 @@ const CurrencyRate: React.FC<{ currency: string }> = ({ currency }) => {
       </td>
     </tr>
   )
-}
+})
 
 const Currencies = () => {
   const currencies = useCurrencies()
