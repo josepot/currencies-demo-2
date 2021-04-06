@@ -67,14 +67,16 @@ const CurrencySelector: React.FC<{
 }
 
 const Orderline: React.FC<Order> = (order) => {
+  const [price, setPrice] = useState(order.price)
+  const [currency, setCurrency] = useState(order.currency)
   return (
     <tr>
       <td>{order.title}</td>
       <td>
-        <NumberInput value={order.price} onChange={() => {}} />
+        <NumberInput value={price} onChange={setPrice} />
       </td>
       <td>
-        <CurrencySelector value={order.currency} onChange={() => {}} />
+        <CurrencySelector value={currency} onChange={setCurrency} />
       </td>
       <td>{formatPrice(1000)}£</td>
     </tr>
