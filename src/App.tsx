@@ -33,9 +33,11 @@ const CurrenciesProvider: React.FC = ({ children }) => {
   )
 }
 
-const CurrencyRate: React.FC<{ currency: string }> = memo(({ currency }) => {
-  const [currencyRates, setCurrencyRates] = useCurrencyRates()
-  const rate = currencyRates[currency]
+const CurrencyRate: React.FC<{
+  currency: string
+  rate: number
+  setCurrencyRates: SetState<Record<string, number>>
+}> = memo(({ currency, rate, setCurrencyRates }) => {
   return (
     <tr key={currency}>
       <td>{formatCurrency(currency)}</td>
@@ -52,11 +54,16 @@ const CurrencyRate: React.FC<{ currency: string }> = memo(({ currency }) => {
 })
 
 const Currencies = () => {
-  const currencies = useCurrencies()
+  const [currencyRates, setCurrencyRates] = useCurrencyRates()
   return (
     <Table columns={["Currency", "Exchange rate"]}>
-      {currencies.map((currency) => (
-        <CurrencyRate key={currency} currency={currency} />
+      {Object.entries(currencyRates).map(([currency, rate]) => (
+        <CurrencyRate
+          key={currency}
+          currency={currency}
+          rate={rate}
+          setCurrencyRates={setCurrencyRates}
+        />
       ))}
     </Table>
   )
