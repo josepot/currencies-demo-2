@@ -109,10 +109,18 @@ const CurrencyRate: React.FC<{
 }> = memo(({ currency, rate, setCurrencyRates }) => {
   const [rateState, setRateState] = useState(CurrencyRateState.ACCEPTED)
   const [userRate, setUserRate] = useState<number>(rate)
+  const [interrupted, setInterrupted] = useState(false)
 
   useEffect(() => {
     if (userRate === rate) {
       setRateState(CurrencyRateState.ACCEPTED)
+      return
+    }
+
+    if (interrupted) {
+      setInterrupted(false)
+      setRateState(CurrencyRateState.ACCEPTED)
+      setUserRate(rate)
       return
     }
 
@@ -136,14 +144,14 @@ const CurrencyRate: React.FC<{
       clearTimeout(token)
       cancelled = true
     }
-  }, [userRate, currency, setCurrencyRates, rate])
+  }, [userRate, currency, setCurrencyRates, rate, interrupted])
 
   const isDisabled = rateState === CurrencyRateState.IN_PROGRESS
   const backgroundColor =
     rateState === CurrencyRateState.ACCEPTED ? "limegreen" : undefined
 
   return (
-    <tr key={currency}>
+    <tr key={currency} onClick={() => setInterrupted(true)}>
       <td>{formatCurrency(currency)}</td>
       <td>
         <NumberInput
