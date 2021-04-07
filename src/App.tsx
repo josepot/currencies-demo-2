@@ -15,6 +15,7 @@ import {
 import {
   connect,
   delay,
+  defaultIfEmpty,
   distinctUntilChanged,
   filter,
   map,
@@ -26,6 +27,7 @@ import {
   switchMap,
   take,
   takeLast,
+  takeUntil,
   takeWhile,
   withLatestFrom,
 } from "rxjs/operators"
@@ -45,6 +47,7 @@ import {
 const [useCurrencies] = bind(EMPTY, Object.keys(initialCurrencyRates))
 
 const [rateChange$, onRateChange] = createKeyedSignal<string, number>()
+const [cancelRateRequest$, onCancelRateRequest] = createKeyedSignal<string>()
 
 enum CurrencyRateState {
   ACCEPTED,
@@ -63,6 +66,8 @@ const [useCurrencyRate, currencyRate$] = bind(
 
     const getNextAcceptedValue$ = (candidate: number) =>
       defer(() => isCurrecyRateValid(currency, candidate)).pipe(
+        takeUntil(cancelRateRequest$(currency)),
+        defaultIfEmpty(false),
         mergeMap((isOk) => (isOk ? of(candidate) : latestAcceptedValue$)),
         map((value) => ({
           value,
@@ -161,7 +166,11 @@ const CurrencyRateRow: React.FC<{ currency: string }> = ({ currency }) => {
   return (
     <tr key={currency}>
       <td>{formatCurrency(currency)}</td>
-      <td>
+      <td
+        onClick={() => {
+          onCancelRateRequest(currency)
+        }}
+      >
         <NumberInput
           value={currencyRate.value}
           onChange={(value) => {
