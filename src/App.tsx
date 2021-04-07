@@ -3,19 +3,21 @@ import {
   Dispatch,
   memo,
   useContext,
+  useEffect,
   useReducer,
   useState,
 } from "react"
 import {
-  initialCurrencyRates,
   formatCurrency,
-  Order,
-  NumberInput,
   formatPrice,
-  initialOrders,
-  Table,
   getBaseCurrencyPrice,
   getRandomOrder,
+  initialCurrencyRates,
+  initialOrders,
+  isCurrecyRateValid,
+  NumberInput,
+  Order,
+  Table,
   uuidv4,
 } from "./utils"
 
@@ -94,20 +96,63 @@ const OrdersProvider: React.FC = ({ children }) => {
   )
 }
 
+enum CurrencyRateState {
+  ACCEPTED,
+  DIRTY,
+  IN_PROGRESS,
+}
+
 const CurrencyRate: React.FC<{
   currency: string
   rate: number
   setCurrencyRates: SetState<Record<string, number>>
 }> = memo(({ currency, rate, setCurrencyRates }) => {
+  const [rateState, setRateState] = useState(CurrencyRateState.ACCEPTED)
+  const [userRate, setUserRate] = useState<number>(rate)
+
+  useEffect(() => {
+    if (userRate === rate) {
+      setRateState(CurrencyRateState.ACCEPTED)
+      return
+    }
+
+    let cancelled = false
+    setRateState(CurrencyRateState.DIRTY)
+    const token = setTimeout(async () => {
+      setRateState(CurrencyRateState.IN_PROGRESS)
+
+      const result = await isCurrecyRateValid(currency, userRate)
+
+      if (cancelled) return
+
+      setRateState(CurrencyRateState.ACCEPTED)
+      if (result) {
+        setCurrencyRates((prev) => ({ ...prev, [currency]: userRate }))
+      } else {
+        setUserRate(rate)
+      }
+    }, 500)
+    return () => {
+      clearTimeout(token)
+      cancelled = true
+    }
+  }, [userRate, currency, setCurrencyRates, rate])
+
+  const isDisabled = rateState === CurrencyRateState.IN_PROGRESS
+  const backgroundColor =
+    rateState === CurrencyRateState.ACCEPTED ? "limegreen" : undefined
+
   return (
     <tr key={currency}>
       <td>{formatCurrency(currency)}</td>
       <td>
         <NumberInput
-          value={rate}
-          onChange={(value) => {
-            setCurrencyRates((prev) => ({ ...prev, [currency]: value }))
+          value={userRate}
+          onChange={setUserRate}
+          style={{
+            backgroundColor,
           }}
+          disabled={isDisabled}
         />
       </td>
     </tr>
