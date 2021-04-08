@@ -47,9 +47,11 @@ import {
 const [useCurrencies] = bind(EMPTY, Object.keys(initialCurrencyRates))
 
 const [rateChange$, onRateChange] = createKeyedSignal<string, number>()
+export { onRateChange }
+
 const [cancelRateRequest$, onCancelRateRequest] = createKeyedSignal<string>()
 
-enum CurrencyRateState {
+export enum CurrencyRateState {
   ACCEPTED,
   DIRTY,
   IN_PROGRESS,
@@ -60,7 +62,7 @@ interface CurrencyRate {
   state: CurrencyRateState
 }
 
-const [useCurrencyRate, currencyRate$] = bind(
+export const [useCurrencyRate, currencyRate$] = bind(
   (currency: string): Observable<CurrencyRate> => {
     const latestAcceptedValue$ = acceptedCurrencyRates$(currency).pipe(take(1))
 
