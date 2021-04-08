@@ -151,7 +151,12 @@ const CurrencyRate: React.FC<{
     rateState === CurrencyRateState.ACCEPTED ? "limegreen" : undefined
 
   return (
-    <tr key={currency} onClick={() => setInterrupted(true)}>
+    <tr
+      key={currency}
+      onClick={() =>
+        rateState === CurrencyRateState.IN_PROGRESS && setInterrupted(true)
+      }
+    >
       <td>{formatCurrency(currency)}</td>
       <td>
         <NumberInput
